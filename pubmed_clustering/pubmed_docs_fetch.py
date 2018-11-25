@@ -11,21 +11,23 @@ def fetch_pubmed_documents(pmids, email="Your.Name.Here@example.org", file=False
 
     if type(pmids) is list:
         pmids = ",".join(pmids)
+    elif type(pmids) is not str:
+        raise TypeError('Incorrect type of `pmids`, should be list or str')
 
     return _parse_pubmed_xml(_query_pubmed(pmids, email))
 
 
 def _query_pubmed(pmids, email="Your.Name.Here@example.org"):
     Entrez.email = email
+    logging.info('Fetching articles and abstracts from PubMed')
     handle = Entrez.efetch(db="pubmed", id=pmids, rettype="abstract")
     return handle.read()
 
 
 def _parse_pubmed_xml(pubmed_xml):
+    logging.info('Parsing fetched PubMed articles')
     soup = BeautifulSoup(pubmed_xml, 'xml')
-
     documents = []
-
     for i, record in enumerate(soup.find_all('PubmedArticle')):
         try:
             pmid = record.MedlineCitation.PMID.text
@@ -40,5 +42,5 @@ def _parse_pubmed_xml(pubmed_xml):
         except AttributeError:
             abstract = ''
         documents.append({'pmid': pmid, 'title': title, 'abstract': abstract, 'all_text': title + ' ' + abstract})
-
+    logging.info('Parsed PubMed articles')
     return documents
