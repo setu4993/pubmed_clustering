@@ -14,14 +14,14 @@ def documents_disease_list(documents):
     disease_words = []
     document_json_output = []
 
-    logging.info('Processing all documents with MetaMap', len(documents))
+    logging.info('Processing all documents with MetaMap')
 
     for i, document in enumerate(documents):
+        if i % 10 == 0:
+            logging.info('%d of %d documents processed with MetaMap', i, len(documents))
         json_output = _metamap_fetch(document['all_text'])
         document_json_output.append(json_output)
         disease_words.append(_metamap_matched_words(json_output))
-        if i % 10 == 0:
-            logging.info('%d of %d documents processed with MetaMap', i, len(documents))
 
     logging.info('All documents processed with MetaMap')
     return disease_words, document_json_output
