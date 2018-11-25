@@ -14,13 +14,16 @@ def documents_disease_list(documents):
     disease_words = []
     document_json_output = []
 
+    logging.info('Processing all documents with MetaMap', len(documents))
+
     for i, document in enumerate(documents):
         json_output = _metamap_fetch(document['all_text'])
         document_json_output.append(json_output)
         disease_words.append(_metamap_matched_words(json_output))
         if i % 10 == 0:
-            print(i)
+            logging.info('%d of %d documents processed with MetaMap', i, len(documents))
 
+    logging.info('All documents processed with MetaMap')
     return disease_words, document_json_output
 
 
@@ -87,4 +90,5 @@ def _metamap_matched_words(output):
                             for word in mapping["CandidatePreferred"].lower().translate(translator).split():
                                 if len(word) > 2:
                                     words_list.append(word.lower().translate(translator))
+
     return words_list
