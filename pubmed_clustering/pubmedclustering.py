@@ -10,11 +10,14 @@ logger = logging.getLogger()
 
 
 class PubMedClustering:
-    def __init__(self, pubmed_ids, metamap='/opt/public_mm/bin/metamap16', email="Your.Name.Here@example.org", is_file=False):
+    def __init__(self, pubmed_ids, metamap='/opt/public_mm/bin/metamap16', email="Your.Name.Here@example.org",
+                 is_file=False, labels=None, labels_is_file=None):
         self.pubmed_ids = pubmed_ids
         self.metamap_location = metamap
         self.email = email
         self.is_file = is_file
+        self.target_labels = labels
+        self.labels_is_file = labels_is_file
 
         self.documents = None
         self.pmids = None
@@ -39,6 +42,9 @@ class PubMedClustering:
         self.__create_tfidf_model()
         self.__calc_document_matrix()
         self.__clustering()
+        if self.target_labels:
+            self.__original_labels(self.target_labels, is_file=self.labels_is_file)
+            self.__purity()
 
     def __create_tfidf_model(self):
         logging.info('Creating dictionary')
@@ -73,6 +79,7 @@ class PubMedClustering:
         logging.info('Clustering results saved to object')
 
     def __original_labels(self, ground_truth, is_file=False):
+        logging.info('Reading ground truth labels')
         if is_file:
             doc_lines = open(ground_truth, 'r').readlines()
             ground_truth = self.__read_labels(doc_lines)
@@ -95,6 +102,7 @@ class PubMedClustering:
         return pmid_ground_truth
 
     def __purity(self):
+        logging.info('Calculating purity')
         cluster_results = [{} for _ in range(self.total_clusters)]
         for pmid, cluster in self.clustering_results_dict.items():
             if self.ground_truth[pmid] not in cluster_results[cluster]:
@@ -103,3 +111,5 @@ class PubMedClustering:
 
         cluster_max = [max(cluster_result.values()) for cluster_result in cluster_results]
         self.purity = sum(cluster_max) / len(self.clustering_results_dict)
+        logging.info('Purity calculated and stored')
+
