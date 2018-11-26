@@ -70,7 +70,7 @@ class PubMedClustering:
         self.document_matrix = np.zeros((len(self.disease_words), len(self.dictionary)))
         for i, disease_words in enumerate(self.corpus):
             if i % 10 == 0:
-                logging.info('%d of %d documents processed with MetaMap', i, len(self.documents))
+                logging.info('Document vector for %d of %d documents calculated', i, len(self.documents))
             tfidf_score = self.tfidf_model[disease_words]
             for (dct_id, score) in tfidf_score:
                 self.document_matrix[i][dct_id] = score
