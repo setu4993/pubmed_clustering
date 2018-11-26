@@ -51,6 +51,7 @@ class PubMedClustering:
         if self.target_labels:
             self.__original_labels(self.target_labels, is_file=self.labels_is_file)
             self.__purity()
+            self.__f_measure()
 
     def __create_tfidf_model(self):
         logging.info('Creating dictionary')
