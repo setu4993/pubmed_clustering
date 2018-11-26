@@ -5,8 +5,8 @@ import logging
 logger = logging.getLogger()
 
 
-def fetch_pubmed_documents(pmids, email="Your.Name.Here@example.org", file=False):
-    if file:
+def fetch_pubmed_documents(pmids, email="Your.Name.Here@example.org", is_file=False):
+    if is_file:
         pmids = open(pmids, 'r').readlines()
 
     if type(pmids) is list:
@@ -28,6 +28,7 @@ def _parse_pubmed_xml(pubmed_xml):
     logging.info('Parsing fetched PubMed articles')
     soup = BeautifulSoup(pubmed_xml, 'xml')
     documents = []
+    pmids = []
     for i, record in enumerate(soup.find_all('PubmedArticle')):
         try:
             pmid = record.MedlineCitation.PMID.text
@@ -42,5 +43,6 @@ def _parse_pubmed_xml(pubmed_xml):
         except AttributeError:
             abstract = ''
         documents.append({'pmid': pmid, 'title': title, 'abstract': abstract, 'all_text': title + ' ' + abstract})
+        pmids.append(pmid)
     logging.info('Parsed PubMed articles')
-    return documents
+    return documents, pmids

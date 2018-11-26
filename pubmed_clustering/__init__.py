@@ -1,4 +1,3 @@
-from .pubmed_docs_fetch import fetch_pubmed_documents
-from .metamap_operations import documents_disease_list
+from .pubmedclustering import PubMedClustering
 import logging
 logging.getLogger(__name__).addHandler(logging.NullHandler())
