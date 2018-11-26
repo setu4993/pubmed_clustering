@@ -32,9 +32,15 @@ class PubMedClustering:
         self.affinity_propagation = None
         self.clustering_results = None
         self.clustering_results_dict = None
+        self.cluster_wise_results = None
 
         self.ground_truth = None
+        self.categories = None
+
         self.purity = None
+        self.precision = None
+        self.recall = None
+        self.f_measure = None
 
     def run(self):
         self.documents, self.pmids = fetch_pubmed_documents(self.pubmed_ids, email=self.email, is_file=self.is_file)
@@ -86,6 +92,7 @@ class PubMedClustering:
 
         if type(ground_truth) is dict:
             self.ground_truth = ground_truth
+            self.categories = set(ground_truth.values())
         else:
             raise TypeError('Incorrect type of `ground_truth` variable')
 
@@ -103,13 +110,29 @@ class PubMedClustering:
 
     def __purity(self):
         logging.info('Calculating purity')
-        cluster_results = [{} for _ in range(self.total_clusters)]
+        self.cluster_wise_results = [{} for _ in range(self.total_clusters)]
         for pmid, cluster in self.clustering_results_dict.items():
-            if self.ground_truth[pmid] not in cluster_results[cluster]:
-                cluster_results[cluster][self.ground_truth[pmid]] = 0
-            cluster_results[cluster][self.ground_truth[pmid]] += 1
+            if self.ground_truth[pmid] not in self.cluster_wise_results[cluster]:
+                self.cluster_wise_results[cluster][self.ground_truth[pmid]] = 0
+            self.cluster_wise_results[cluster][self.ground_truth[pmid]] += 1
 
-        cluster_max = [max(cluster_result.values()) for cluster_result in cluster_results]
+        cluster_max = [max(cluster_result.values()) for cluster_result in self.cluster_wise_results]
         self.purity = sum(cluster_max) / len(self.clustering_results_dict)
         logging.info('Purity calculated and stored')
 
+    def __f_measure(self):
+        logging.info('Calculating F-measure')
+
+        self.precision = np.mean([max(cluster_result.values()) / sum(cluster_result.values()) for cluster_result in
+                                  self.cluster_wise_results])
+        recall_list = {category: 0 for category in self.categories}
+        recall_total = {category: 0 for category in self.categories}
+        for cluster_result in self.cluster_wise_results:
+            for category, count in cluster_result.items():
+                recall_total[category] += count
+            max_key = max(cluster_result, key=cluster_result.get)
+            recall_list[max_key] += cluster_result[max_key]
+        self.recall = np.mean([recall_list[category] / recall_total[category] for category in
+                               self.categories])
+        self.f_measure = (2 * self.precision * self.recall) / (self.precision + self.recall)
+        logging.info('Precision, recall and F-measure calculated and stored')
