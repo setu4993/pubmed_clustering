@@ -5,19 +5,21 @@ from gensim.models import TfidfModel
 from gensim.corpora import Dictionary
 import logging
 from sklearn.cluster import AffinityPropagation
+from os.path import splitext
 
 logger = logging.getLogger()
 
 
 class PubMedClustering:
     def __init__(self, pubmed_ids, metamap='/opt/public_mm/bin/metamap16', email="Your.Name.Here@example.org",
-                 is_file=False, labels=None, labels_is_file=None):
+                 is_file=False, labels=None, labels_is_file=None, write_to_file=False, output_file=None):
         self.pubmed_ids = pubmed_ids
         self.metamap_location = metamap
         self.email = email
         self.is_file = is_file
         self.target_labels = labels
         self.labels_is_file = labels_is_file
+        self.write_output_file = write_to_file
 
         self.documents = None
         self.pmids = None
@@ -42,6 +44,14 @@ class PubMedClustering:
         self.recall = None
         self.f_measure = None
 
+        if is_file and self.write_output_file and not output_file:
+            filename, extension = splitext(self.pubmed_ids)
+            self.output_file = filename + '_clustered' + extension
+        elif is_file and self.write_output_file and output_file:
+            self.output_file = output_file
+        elif is_file and self.write_output_file:
+            logging.error('No output file specified, will not write output to file')
+
     def run(self):
         self.documents, self.pmids = fetch_pubmed_documents(self.pubmed_ids, email=self.email, is_file=self.is_file)
         self.disease_words, self.metamap_json = documents_disease_list(self.documents)
@@ -52,6 +62,8 @@ class PubMedClustering:
             self.__original_labels(self.target_labels, is_file=self.labels_is_file)
             self.__purity()
             self.__f_measure()
+        if self.write_output_file and self.output_file:
+            self.__write_output_file()
 
     def __create_tfidf_model(self):
         logging.info('Creating dictionary')
@@ -137,3 +149,36 @@ class PubMedClustering:
                                self.categories])
         self.f_measure = (2 * self.precision * self.recall) / (self.precision + self.recall)
         logging.info('Precision, recall and F-measure calculated and stored')
+
+    def __write_output_file(self):
+        logging.info('Writing to file')
+        output_strings = []
+        for i in range(self.total_clusters):
+            word_count = {}
+            doc_count = 0
+            cluster_pmids = []
+            for words, pmid in zip(self.disease_words, self.pmids):
+                if self.clustering_results_dict[pmid] == i:
+                    cluster_pmids.append(pmid)
+                    doc_count += 1
+                    previous_words = []
+                    for word in words:
+                        if word not in previous_words:
+                            if word not in word_count:
+                                word_count[word] = 0
+                            word_count[word] += 1
+                            previous_words.append(word)
+            most_frequent_words = []
+            for word, count in word_count.items():
+                if count > (doc_count / 2):
+                    most_frequent_words.append(word)
+            cluster_string = ','.join(most_frequent_words)
+            output_strings.extend([pmid + '\t' + cluster_string + '\n' for pmid in cluster_pmids])
+
+        out_file = open(self.output_file, 'w')
+        for line in output_strings:
+            out_file.write(line)
+        logging.info('Output written to file')
+
+
+
