@@ -21,6 +21,8 @@ class PubMedClustering:
         self.labels_is_file = labels_is_file
         self.write_output_file = write_to_file
 
+        self.output_file = None
+
         self.documents = None
         self.pmids = None
 
