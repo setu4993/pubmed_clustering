@@ -45,7 +45,8 @@ The class `PubMedClustering` contains the methods and variables that are used in
 - `email` (optional): Email ID. Required to query PubMed using the BioPython library. Default: `"Your.Name.Here@example.org"`.
 - `labels` (optional): Either a dictionary containing PMID -> cluster pairs or a location to a text file that of the form `PMID\tlabel`. If it is a text file, ensure the flag `labels_is_file` is set to `True`. Default: `None`.
 - `labels_is_file` (optional): Boolean flag to specify if `pubmed_ids` is a text file that should be read. Default: `False`.
-
+- `write_to_file` (optional): Boolean flag to specify if the output should be written to a file where each line is of the form `PMID\tlabel`. Default `False`.
+- `output_file` (optional): Location of output file. If not specified and `write_to_file` and `is_file` is set, `output_file` will be set to `pubmed_ids`, with `_clustered` appended to its end.
 
 After initializing the class, use the `run()` method of the class to execute the whole pipeline. Upon completion, the results can be seen by querying the `clustering_results_dict` property (a dictionary of PMID -> cluster). If the labels are provided, the evaluation results can be seen by querying the `purity`, `precision`, `recall` and `f_measure` properties of the object.
 
